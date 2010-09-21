@@ -75,7 +75,7 @@ Class Model_Introspection
             $refs.= "\t);\n";
         }
         $data = "class Application_Model_$tableName extends Zend_Db_Table {\n";
-	$data = "\t".'$_name' . ' = \'' . $table  . '\';' . "\n";
+	$data.= "\t".'$_name' . ' = \'' . $table  . '\';' . "\n";
         $data.= $refs;
         $data.="}";
         file_put_contents($filename, $data);
