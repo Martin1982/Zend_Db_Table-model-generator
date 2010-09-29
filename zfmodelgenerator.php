@@ -8,11 +8,11 @@ Class Model_Introspection
 
     public function main($config)
     {
-        $this->connectToDb($config['hostname'], $config['user'], $config['password'], $config['database']);
+        $this->connectToDb($config['hostname'], $config['user'], $config['password'], $config['database'], $config['modelPrefix']);
         $tables = $this->getTables();
         $this->createModelDirectory();
         foreach ($tables as $table) {
-            $this->createModel($table);
+            $this->createModel($table, $config['modelPrefix']);
         }
     }
 
@@ -40,7 +40,7 @@ Class Model_Introspection
         }
     }
 
-    public function createModel($table)
+    public function createModel($table, $modelPrefix)
     {
         $tableName = ucfirst($table);
         $filename = 'models/'.$tableName . '.php';
@@ -67,14 +67,14 @@ Class Model_Introspection
                 if ($numMatches) {
                     $refs.= "\t\t'{$params[1][0]}'" . ' => array(' . "\n";
                     $refs.= "\t\t\t'columns' => '{$params[2][0]}',\n";
-                    $refs.= "\t\t\t'refTableClass' => 'Application_Model_{$params[3][0]}',\n";
+                    $refs.= "\t\t\t'refTableClass' => '" . $modelPrefix . ucfirst($params[3][0]) . "',\n";
                     $refs.= "\t\t\t'refColumns' => '{$params[4][0]}',\n";
                     $refs.= "\t\t),\n";
                 }
             }
             $refs.= "\t);\n";
         }
-        $data = "class Application_Model_$tableName extends Zend_Db_Table {\n";
+        $data = "class " . $modelPrefix . $tableName . " extends Zend_Db_Table {\n";
 	$data.= "\t".'$_name' . ' = \'' . $table  . '\';' . "\n";
         $data.= $refs;
         $data.="}";
@@ -105,6 +105,8 @@ echo "Enter the database password []: ";
 $config['password'] =  Cli::catchUserInput('');
 echo "Enter the database name: ";
 $config['database'] =  Cli::catchUserInput('');
+echo "Enter the model prefix [Application_Model_]: ";
+$config['modelPrefix'] =  Cli::catchUserInput('Application_Model_');
 
 $introspector = new Model_Introspection();
 $introspector->main($config);
