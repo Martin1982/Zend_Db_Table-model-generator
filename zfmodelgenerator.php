@@ -3,26 +3,54 @@
  * Zend Framwork Model Generator 
  * for MySQL tables
  */
-Class Model_Introspection
+Class Model_Generator
 {
 
-    public function main($config)
+    protected $_config;
+
+    public function run()
     {
-        $this->connectToDb($config['hostname'], $config['user'], $config['password'], $config['database'], $config['modelPrefix']);
-        $tables = $this->getTables();
-        $this->createModelDirectory();
+        $this->_renderIntro();
+        $this->_config = $this->_requestConfig();
+        $this->_connectToDb();
+        $tables = $this->_getTables();
+        $this->_createModelDirectory();
         foreach ($tables as $table) {
-            $this->createModel($table, $config['modelPrefix']);
+            $this->_createModel($table, $this->_config['modelPrefix']);
         }
+        $this->_renderOutro();
     }
 
-    public function connectToDb($host, $user, $pass, $db)
+    protected function _renderIntro()
     {
-        mysql_connect($host, $user, $pass) or die("Could not connect to DB\n");
-        mysql_select_db($db) or die("Could not use DB\n");
+        Cli::renderLine("====================================================================================");
+        Cli::renderLine("Zend Framework Model Creater V0.01 by Martin de Keijzer <martin.dekeijzer@gmail.com>");
+        Cli::renderLine("PLEASE NOTE: currently this tool only supports MySQL");
+        Cli::renderLine("====================================================================================");
     }
 
-    public function getTables()
+    protected function _requestConfig(){
+        $config['hostname']     = Cli::catchUserInput("Please enter the database host [localhost]: ", 'localhost');
+        $config['user']         = Cli::catchUserInput("Enter the database username [root]: ", 'root');
+        $config['password']     = Cli::catchUserInput("Enter the database password []: ", '');
+        $config['database']     = Cli::catchUserInput("Enter the database name: ", '');
+        $config['modelPrefix']  = Cli::catchUserInput("Enter the model prefix [Application_Model_]: ", 'Application_Model_');
+
+        return $config;
+    }
+
+    protected function _renderOutro()
+    {
+        Cli::renderLine("Models are now available in ./models");
+    }
+
+    protected function _connectToDb()
+    {
+        mysql_connect($this->_config['hostname'], $this->_config['user'], $this->_config['password']) or die("Could not connect to DB\n");
+        mysql_select_db($this->_config['database']) or die("Could not use DB: \n" . $this->_config['database'] . "\n");
+    }
+
+    protected function _getTables()
     {
         $tablesQuery = "SHOW TABLES";
         $tableExec = mysql_query($tablesQuery) or die(mysql_error());
@@ -33,14 +61,14 @@ Class Model_Introspection
         return $tables;
     }
 
-    public function createModelDirectory()
+    protected function _createModelDirectory()
     {
         if (!is_dir('models')) {
             mkdir('models');
         }
     }
 
-    public function createModel($table, $modelPrefix)
+    protected function _createModel($table, $modelPrefix)
     {
         $tableName = ucfirst($table);
         $filename = 'models/'.$tableName . '.php';
@@ -84,31 +112,21 @@ Class Model_Introspection
 
 class Cli
 {
-    public static function catchUserInput($default = null){
+    public static function catchUserInput($message = "Input: ", $default = null)
+    {
+        echo $message;
         $input = str_replace(PHP_EOL, '', fgets(STDIN));
         if ($default != null && empty($input)) {
             return $default;
         }
         return $input;
     }
+
+    public static function renderLine($content)
+    {
+        echo $content."\n";
+    }
 }
 
-echo "====================================================================================\n";
-echo "Zend Framework Model Creater V0.01 by Martin de Keijzer <martin.dekeijzer@gmail.com>\n";
-echo "PLEASE NOTE: currently this tool only supports MySQL\n";
-echo "====================================================================================\n";
-echo "Please enter the database host [localhost]: ";
-$config['hostname'] = Cli::catchUserInput('localhost');
-echo "Enter the database username [root]: ";
-$config['user'] = Cli::catchUserInput('root');
-echo "Enter the database password []: ";
-$config['password'] =  Cli::catchUserInput('');
-echo "Enter the database name: ";
-$config['database'] =  Cli::catchUserInput('');
-echo "Enter the model prefix [Application_Model_]: ";
-$config['modelPrefix'] =  Cli::catchUserInput('Application_Model_');
-
-$introspector = new Model_Introspection();
-$introspector->main($config);
-
-echo "Models are now available in ./models\n";
+$generator = new Model_Generator();
+$generator->run();
