@@ -100,8 +100,9 @@ Class Generator
             }
             $refs.= "\t);\n";
         }
-        $data = "class " . $modelPrefix . $tableName . " extends Zend_Db_Table {\n";
-	$data.= "\t".'$_name' . ' = \'' . $table  . '\';' . "\n";
+        $data = "<?php\n";
+        $data.= "class " . $modelPrefix . $tableName . " extends Zend_Db_Table {\n";
+	$data.= "\t".'protected $_name' . ' = \'' . $table  . '\';' . "\n";
         $data.= $refs;
         $data.="}";
         file_put_contents($filename, $data);
