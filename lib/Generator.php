@@ -33,13 +33,14 @@ Class Generator
         $config['password']     = Cli::catchUserInput("Enter the database password []: ", '');
         $config['database']     = Cli::catchUserInput("Enter the database name: ", '');
         $config['modelPrefix']  = Cli::catchUserInput("Enter the model prefix [Application_Model_]: ", 'Application_Model_');
+		$config['modelPath']	= Cli::catchUserInput("Enter a path to place your models [./models]", 'models');
 
         return $config;
     }
 
     protected function _renderOutro()
     {
-        Cli::renderLine("Models are now available in ./models");
+        Cli::renderLine("Models are now available in " . $this->_config['modelPath']);
     }
 
     protected function _connectToDb()
@@ -61,15 +62,16 @@ Class Generator
 
     protected function _createModelDirectory()
     {
-        if (!is_dir('models')) {
-            mkdir('models');
+		
+        if (!is_dir($this->_config['modelPath'])) {
+            mkdir($this->_config['modelPath'], 0777, true);
         }
     }
 
     protected function _createModel($table, $modelPrefix)
     {
-        $tableName = ucfirst($table);
-        $filename = 'models/'.$tableName . '.php';
+        $tableName = str_replace(' ', '', ucwords(str_replace('_', ' ', $table)));
+        $filename = $this->_config['modelPath'] . '/'.$tableName . '.php';
 
         if (file_exists($filename)) {
             return false;
@@ -102,7 +104,7 @@ Class Generator
         }
         $data = "<?php\n";
         $data.= "class " . $modelPrefix . $tableName . " extends Zend_Db_Table {\n";
-	$data.= "\t".'protected $_name' . ' = \'' . $table  . '\';' . "\n";
+		$data.= "\t".'protected $_name' . ' = \'' . $table  . '\';' . "\n";
         $data.= $refs;
         $data.="}";
         file_put_contents($filename, $data);
