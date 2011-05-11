@@ -5,4 +5,5 @@ so expect broken things.
 The tool is restricted to connect to MySQL databases only. In future releases PDO will
 replace this connector.
 
-USAGE: php zfmodelgenerator.php
+USAGE: ./modelgen
+ALTERNATIVE USAGE: php zfmodelgenerator.php
