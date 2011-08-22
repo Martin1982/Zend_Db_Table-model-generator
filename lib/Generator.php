@@ -4,6 +4,7 @@ require_once 'lib/Cli.php';
 
 class Generator
 {
+	private $_mysqli;
     protected $_tabs = false;
     protected $_config;
 
@@ -49,16 +50,30 @@ class Generator
 
     protected function _connectToDb($config)
     {
-        mysqli_connect($config['hostname'], $config['user'], $config['password']) or die("Could not connect to DB\n");
-        mysqli_select_db($config['database']) or die("Could not use DB: \n" . $config['database'] . "\n");
+    	try {
+    		$this->_mysqli = new mysqli($config['hostname'], $config['user'], $config['password']);
+    	}catch (mysqli_sql_exception $sqlEx) {
+    		Cli::renderLine("Could not connect to Db\n Rason: {$sqlEx->getMessage()}");
+    	}
+    	
+    	try {
+    		$this->_mysqli->select_db($config['database']);
+    	} catch (mysqli_sql_exception $sqlEx) {
+    		Cli::renderLine("Could not use DB: {$config['database']}\n Rason: {$sqlEx->getMessage()}");
+    	}
     }
 
     protected function _getTables()
     {
         $tables = array();
+        $tableExec = NULL;
         $tablesQuery = "SHOW TABLES";
-        $tableExec = mysqli_query($tablesQuery) or die(mysqli_error());
-        while ($tableRes = mysqli_fetch_array($tableExec, MYSQLI_NUM)) {
+        try {
+        	$tableExec = $this->_mysqli->query($tablesQuery);
+        }catch (mysqli_sql_exception $sqlEx) {
+        	Cli::renderLine($sqlEx->getMessage());
+        }
+        while ($tableRes = $tableExec->fetch_array(MYSQLI_NUM)) {
             $tables[] = $tableRes[0];
         }
 
@@ -84,8 +99,8 @@ class Generator
 
         foreach ($tables as $table) {
             $tablePropQuery = "SHOW CREATE TABLE " . $table;
-            $tablePropExec = mysqli_query($tablePropQuery);
-            $tablePropRes = mysqli_fetch_array($tablePropExec, MYSQLI_NUM);
+            $tablePropExec = $this->_mysqli->query($tablePropQuery);
+            $tablePropRes = $tablePropExec->fetch_array(MYSQLI_NUM);
 
             $pattern = "@CONSTRAINT (.*)@";
             $subject = $tablePropRes[1];
